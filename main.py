@@ -20,16 +20,16 @@ chromedriver_path = ChromeDriverManager().install()
 if platform.system() == 'Linux':
     chromedriver_path = "/usr/bin/chromedriver"
 
-driver = webdriver.Chrome(
-    options=options,
-    service=ChromiumService(executable_path=chromedriver_path)
-)
-
 # create all metrics instances
 print("create all metrics instances...")
 m = Info('aphorism', '格言をランダムに表示', registry=registry)
 
 while True:
+
+    driver = webdriver.Chrome(
+        options=options,
+        service=ChromiumService(executable_path=chromedriver_path)
+    )
 
     print("get aphorism...")
     driver.get("https://dictionary.goo.ne.jp/quote/")
@@ -46,5 +46,7 @@ while True:
 
     except NoSuchElementException:
         print("WARN: 引用が見つかりませんでした(´・ω・`)")
+
+    driver.quit()
 
     time.sleep(3600*1)
