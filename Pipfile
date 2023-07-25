@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 prometheus-client = "*"
 selenium = "*"
-webdriver-manager = "*"
 
 [dev-packages]
 
