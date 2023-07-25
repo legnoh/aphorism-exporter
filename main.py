@@ -25,7 +25,6 @@ if __name__ == '__main__':
     logging.info("create all metrics instances...")
     m = Info('aphorism', '格言をランダムに表示', registry=registry)
 
-    logging.info("initializing chromium & selenium webdriver...")
     while True:
         driver_ready = False
         while driver_ready == False:
