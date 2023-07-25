@@ -3,7 +3,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromiumService
 from selenium.webdriver.chrome.service import Service as ChromeService
 
-from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
@@ -26,20 +25,13 @@ if __name__ == '__main__':
     m = Info('aphorism', '格言をランダムに表示', registry=registry)
 
     while True:
-        driver_ready = False
-        while driver_ready == False:
-            try:
-                if platform.system() == 'Linux':
-                    logging.info("initializing chromium...")
-                    driver = webdriver.Chrome(service=ChromiumService(), options=options)
-                else:
-                    logging.info("initializing chrome...")
-                    driver = webdriver.Chrome(service=ChromeService(), options=options)
-                driver.implicitly_wait(10)
-                driver_ready = True
-            except (WebDriverException) as e:
-                logging.error(e)
-                continue
+
+        logging.info("initializing chromium & selenium webdriver...")
+        if platform.system() == 'Linux':
+            driver = webdriver.Chrome(service=ChromiumService(), options=options)
+        else:
+            driver = webdriver.Chrome(service=ChromeService(), options=options)
+        driver.implicitly_wait(10)
 
         logging.info("get aphorism...")
         driver.get("https://dictionary.goo.ne.jp/quote/")
