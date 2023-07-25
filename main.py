@@ -31,10 +31,10 @@ if __name__ == '__main__':
             driver = webdriver.Chrome(service=ChromiumService(), options=options)
         else:
             driver = webdriver.Chrome(service=ChromeService(), options=options)
+        driver.implicitly_wait(10)
 
         logging.info("get aphorism...")
         driver.get("https://dictionary.goo.ne.jp/quote/")
-        driver.implicitly_wait(10)
 
         try:
             quote_box = driver.find_element(By.CSS_SELECTOR, "div.content-box-quote > div.content-box-quote-in")
