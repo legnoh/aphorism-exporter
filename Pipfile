@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 prometheus-client = "*"
+pyvirtualdisplay = "*"
 selenium = "*"
 
 [dev-packages]

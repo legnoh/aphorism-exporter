@@ -1,7 +1,7 @@
-import logging,os,platform,time
+import logging,os,time
+from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromiumService
-from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.service import Service
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -13,27 +13,26 @@ logging.basicConfig(format=log_format, datefmt='%Y-%m-%d %H:%M:%S%z', level=logg
 
 if __name__ == '__main__':
 
-    logging.info("initializing exporter...")
+    logging.info("# initializing exporter...")
     registry = CollectorRegistry()
     start_http_server(int(os.environ.get('PORT', 8000)), registry=registry)
 
-    logging.info("create chrome options...")
+    logging.info("# initializing chromium options...")
     options = webdriver.ChromeOptions()
-    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument("--headless")
 
-    logging.info("create all metrics instances...")
+    logging.info("# create all metrics instances...")
     m = Info('aphorism', '格言をランダムに表示', registry=registry)
 
     while True:
+        if os.path.isfile("/.dockerenv"):
+            logging.info("# start display...")
+            display = Display(visible=0, size=(1024, 768))
+            display.start()
 
-        logging.info("initializing chromium & selenium webdriver...")
-        if platform.system() == 'Linux':
-            driver = webdriver.Chrome(service=ChromiumService(), options=options)
-        else:
-            driver = webdriver.Chrome(service=ChromeService(), options=options)
-        driver.implicitly_wait(10)
-
-        logging.info("get aphorism...")
+        logging.info("# get aphorism...")
+        driver = webdriver.Chrome(service=Service(), options=options)
+        driver.implicitly_wait(0.5)
         driver.get("https://dictionary.goo.ne.jp/quote/")
 
         try:
@@ -43,11 +42,12 @@ if __name__ == '__main__':
                 'by': quote_box.find_element(By.CSS_SELECTOR, "p:nth-child(2) > strong").text,
             }
             m.info(infos)
-            logging.info("Successfully acquired the aphorism.")
+            logging.info("## Successfully acquired the aphorism.")
 
         except NoSuchElementException:
-            logging.warn("引用が見つかりませんでした(´・ω・`)")
+            logging.warning("## 引用が見つかりませんでした(´・ω・`)")
 
         driver.quit()
-
+        if os.path.isfile("/.dockerenv"):
+            display.stop()
         time.sleep(3600*1)
