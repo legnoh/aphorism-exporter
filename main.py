@@ -1,15 +1,31 @@
-import logging,os,time
-from pyvirtualdisplay import Display
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-
+import logging, os, time, requests
 from prometheus_client import CollectorRegistry, start_http_server, Info
+from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter, Retry
 
 log_format = '%(asctime)s[%(filename)s:%(lineno)d][%(levelname)s] %(message)s'
 logging.basicConfig(format=log_format, datefmt='%Y-%m-%d %H:%M:%S%z', level=logging.INFO)
+
+def get_html_bs(url:str) -> BeautifulSoup|None:
+
+    s = requests.Session()
+    retries = Retry(total=5,
+                backoff_factor=0.1,
+                status_forcelist=[ 500, 502, 503, 504 ])
+    s.mount('https://', HTTPAdapter(max_retries=retries))
+
+    try:
+        response = s.get(url=url)
+        if response.status_code == 200:
+            html = response.content.decode("utf-8")
+            soup = BeautifulSoup(html, 'html.parser')
+            return soup
+        else:
+            logging.warning(f"Request HTML error url: {url} response: {response}")
+            return None
+    except requests.exceptions.RequestException as e:
+        logging.warning(f"{url} Request HTML failed: url: {url} exception: {e}")
+        return None
 
 if __name__ == '__main__':
 
@@ -17,37 +33,20 @@ if __name__ == '__main__':
     registry = CollectorRegistry()
     start_http_server(int(os.environ.get('PORT', 8000)), registry=registry)
 
-    logging.info("# initializing chromium options...")
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
-
     logging.info("# create all metrics instances...")
     m = Info('aphorism', '格言をランダムに表示', registry=registry)
 
     while True:
-        if os.path.isfile("/.dockerenv"):
-            logging.info("# start display...")
-            display = Display(visible=0, size=(1024, 768))
-            display.start()
-
         logging.info("# get aphorism...")
-        driver = webdriver.Chrome(service=Service(), options=options)
-        driver.implicitly_wait(0.5)
-        driver.get("https://dictionary.goo.ne.jp/quote/")
-
-        try:
-            quote_box = driver.find_element(By.CSS_SELECTOR, "div.content-box-quote > div.content-box-quote-in")
+        soup = get_html_bs("https://dictionary.goo.ne.jp/quote/")
+        quote_box = soup.select_one("div.content-box-quote > div.content-box-quote-in")
+        if quote_box != None:
             infos = {
-                'aphorism': quote_box.find_element(By.CSS_SELECTOR, "p:first-child").text,
-                'by': quote_box.find_element(By.CSS_SELECTOR, "p:nth-child(2) > strong").text,
+            'aphorism': quote_box.select_one("p:first-child").text,
+            'by': quote_box.select_one("p:nth-child(2) > strong").text,
             }
             m.info(infos)
             logging.info("## Successfully acquired the aphorism.")
-
-        except NoSuchElementException:
+        else:
             logging.warning("## 引用が見つかりませんでした(´・ω・`)")
-
-        driver.quit()
-        if os.path.isfile("/.dockerenv"):
-            display.stop()
         time.sleep(3600*1)
