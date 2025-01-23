@@ -19,10 +19,10 @@ curl http://localhost:8000/metrics
 ```sh
 # clone
 git clone https://github.com/legnoh/aphorism-exporter.git && cd aphorism-exporter
-pipenv install
+uv sync
 
 # execute
-pipenv run main
+uv run main.py
 ```
 
 ## Metrics(example)
