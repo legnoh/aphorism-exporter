@@ -7,4 +7,4 @@ COPY . ${WORKDIR}
 RUN uv sync --frozen
 
 EXPOSE 8000
-CMD [ "python3", "./main.py" ]
+CMD [ "uv", "run", "main.py" ]
