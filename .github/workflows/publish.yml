@@ -2,15 +2,16 @@ name: publish
 
 on:
   push:
-    branches:
-    - main
+    branches: [main]
     paths-ignore:
-    - '.github/**'
-    - '.vscode/**'
+      - '.github/**'
+      - '.vscode/**'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  docker-build-and-push:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo 
@@ -28,10 +29,27 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+      - name: Define mode
+        id: mode
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+            echo "push=false" >> $GITHUB_OUTPUT
+          else
+            echo "push=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ steps.mode.outputs.push }}
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/aphorism-exporter:latest
+
+      - name: Docker Hub Description
+        if: github.event_name != 'pull_request_target'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          repository: ${{ secrets.DOCKER_HUB_USERNAME }}/aphorism-exporter
