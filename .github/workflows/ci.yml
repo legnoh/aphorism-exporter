@@ -3,9 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '.github/**'
-      - '.vscode/**'
+    paths-ignore: [.github/**, .vscode/**]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -24,18 +22,20 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Define mode
-        id: mode
+      - name: Define reponame & mode
+        id: defines
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
-            echo "push=false" >> $GITHUB_OUTPUT
+          echo "reponame=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "enable_push=false" >> $GITHUB_OUTPUT
           else
-            echo "push=true" >> $GITHUB_OUTPUT
+            echo "enable_push=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push
@@ -43,13 +43,13 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: ${{ steps.mode.outputs.push }}
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/aphorism-exporter:latest
+          push: ${{ steps.defines.outputs.enable_push }}
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ steps.defines.outputs.reponame }}:latest
 
       - name: Docker Hub Description
-        if: github.event_name != 'pull_request_target'
+        if: github.event_name != 'pull_request'
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          repository: ${{ secrets.DOCKER_HUB_USERNAME }}/aphorism-exporter
+          repository: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ steps.defines.outputs.reponame }}
