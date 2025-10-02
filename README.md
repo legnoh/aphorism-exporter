@@ -1,7 +1,7 @@
 aphorism-exporter
 ===
 
-Prometheus exporter for [世界の名言・格言](https://dictionary.goo.ne.jp/quote/).
+Prometheus exporter for [名言集.com](http://www.meigensyu.com/quotations/index/random).
 
 ## Usage
 

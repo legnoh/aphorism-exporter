@@ -38,12 +38,12 @@ if __name__ == '__main__':
 
     while True:
         logging.info("# get aphorism...")
-        soup = get_html_bs("https://dictionary.goo.ne.jp/quote/")
-        quote_box = soup.select_one("div.content-box-quote > div.content-box-quote-in")
-        if quote_box != None:
+        soup = get_html_bs("http://www.meigensyu.com/quotations/index/random")
+        meigenbox = soup.select_one("div.meigenbox")
+        if meigenbox != None:
             infos = {
-            'aphorism': quote_box.select_one("p:first-child").text,
-            'by': quote_box.select_one("p:nth-child(2) > strong").text,
+            'aphorism': meigenbox.select_one("div.text").text,
+            'by': meigenbox.select_one("div.link > ul > li> a").text,
             }
             m.info(infos)
             logging.info("## Successfully acquired the aphorism.")
